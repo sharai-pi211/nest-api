@@ -1,0 +1,64 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  login     String     @unique
+  password  String
+  version   Int        @default(1)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  favorites Favorites?
+}
+
+model Artist {
+  id        String      @id @default(uuid())
+  name      String
+  grammy    Boolean
+  albums    Album[]     @relation("ArtistToAlbum")
+  tracks    Track[]     @relation("ArtistToTrack")
+  favorites Favorites[] @relation("ArtistToFavorites")
+}
+
+model Album {
+  id        String   @id @default(uuid())
+  name      String
+  year      Int
+  artistId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist    Artist?     @relation("ArtistToAlbum", fields: [artistId], references: [id])
+  tracks    Track[]     @relation("AlbumToTrack")
+  favorites Favorites[] @relation("AlbumToFavorites")
+}
+
+model Track {
+  id        String   @id @default(uuid())
+  title     String
+  duration  Int
+  albumId   String?
+  artistId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  album     Album?      @relation("AlbumToTrack", fields: [albumId], references: [id])
+  artist    Artist?     @relation("ArtistToTrack", fields: [artistId], references: [id])
+  favorites Favorites[] @relation("FavoritesToTrack")
+}
+
+model Favorites {
+  id       String   @id @default(uuid())
+  userId   String   @unique
+  user     User     @relation(fields: [userId], references: [id])
+  albums   Album[]  @relation("AlbumToFavorites")
+  artists  Artist[] @relation("ArtistToFavorites")
+  tracks   Track[]  @relation("FavoritesToTrack")
+}

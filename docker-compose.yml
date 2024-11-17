@@ -1,0 +1,57 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_PORT: ${PG_PORT}
+    ports:
+      - "${PG_PORT_D}:${PG_PORT}"
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_logs:/var/log/postgresql
+    restart: always
+
+  nestjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV}
+    container_name: nestjs_app
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: ${PORT}
+      PG_PORT: ${PG_PORT}
+      PG_PORT_D: ${PG_PORT_D}
+      NODE_ENV: ${NODE_ENV}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+      - ./dist:/app/dist
+    restart: always
+
+networks:
+  app-network:
+    external: true
+
+volumes:
+  postgres_data:
+    name: pg_data_volume
+  postgres_logs:
+    name: pg_logs_volume
